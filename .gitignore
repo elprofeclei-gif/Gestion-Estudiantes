@@ -3,3 +3,6 @@ node_modules/
 uploads/
 logs/
 dist/
+*.zip
+*.rar
+*.7z

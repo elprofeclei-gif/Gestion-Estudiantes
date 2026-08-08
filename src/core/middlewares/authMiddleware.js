@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const jwt = require('../../config/jwt');
 const UnauthorizedError = require('../errors/UnauthorizedError');
 
 function authMiddleware(req, res, next) {
@@ -8,10 +8,14 @@ function authMiddleware(req, res, next) {
     return next(new UnauthorizedError('Token no proporcionado.'));
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.substring(7).trim();
+
+  if (!token) {
+    return next(new UnauthorizedError('Token no proporcionado.'));
+  }
 
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = jwt.verify(token);
     next();
   } catch (error) {
     next(new UnauthorizedError('Token inválido o expirado.'));

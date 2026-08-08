@@ -1,7 +1,6 @@
 const { body } = require('express-validator');
 
 const BaseValidator = require('../../../core/base/BaseValidator');
-const validateRequest = require('../../../core/middlewares/validateRequest');
 
 class UserValidator {
   create = [
@@ -11,8 +10,6 @@ class UserValidator {
     BaseValidator.password('password'),
 
     body('rol').isMongoId().withMessage('El rol es obligatorio.'),
-
-    validateRequest,
   ];
 
   update = [
@@ -22,17 +19,15 @@ class UserValidator {
     BaseValidator.email('correo'),
 
     body('rol').isMongoId().withMessage('El rol es obligatorio.'),
-
-    validateRequest,
   ];
 
-  findById = [BaseValidator.mongoId(), validateRequest];
+  findById = [BaseValidator.mongoId()];
 
-  findAll = [];
+  findAll = BaseValidator.pagination();
 
-  softDelete = [BaseValidator.mongoId(), validateRequest];
+  softDelete = [BaseValidator.mongoId()];
 
-  restore = [BaseValidator.mongoId(), validateRequest];
+  restore = [BaseValidator.mongoId()];
 }
 
 module.exports = new UserValidator();

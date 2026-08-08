@@ -82,11 +82,24 @@ class BaseValidator {
   /**
    * Validar paginación.
    */
-  static pagination() {
+  static pagination(allowedSortFields = ['createdAt']) {
     return [
-      query('page').optional().isInt({ min: 1 }),
+      query('page')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage('page debe ser un entero mayor o igual a 1.'),
 
-      query('limit').optional().isInt({ min: 1, max: 100 }),
+      query('limit')
+        .optional()
+        .isInt({ min: 1, max: 100 })
+        .withMessage('limit debe ser un entero entre 1 y 100.'),
+
+      query('sortBy')
+        .optional()
+        .isIn(allowedSortFields)
+        .withMessage('El campo de ordenamiento no está permitido.'),
+
+      query('order').optional().isIn(['asc', 'desc']).withMessage('order debe ser asc o desc.'),
     ];
   }
 }

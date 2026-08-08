@@ -1,5 +1,9 @@
 class QueryBuilder {
   constructor(model) {
+    if (!model) {
+      throw new Error('El modelo es obligatorio.');
+    }
+
     this.model = model;
   }
 

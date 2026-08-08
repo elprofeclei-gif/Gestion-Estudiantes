@@ -1,6 +1,6 @@
-const BaseValidator = require('../../../core/base/BaseValidator');
-const validateRequest = require('../../../core/middlewares/validateRequest');
 const { body } = require('express-validator');
+
+const BaseValidator = require('../../../core/base/BaseValidator');
 
 class RoleValidator {
   create = [
@@ -13,8 +13,6 @@ class RoleValidator {
       .optional()
       .isMongoId()
       .withMessage('Cada permiso debe ser un ObjectId válido.'),
-
-    validateRequest,
   ];
 
   update = [
@@ -28,17 +26,15 @@ class RoleValidator {
       .optional()
       .isMongoId()
       .withMessage('Cada permiso debe ser un ObjectId válido.'),
-
-    validateRequest,
   ];
 
-  findById = [BaseValidator.mongoId(), validateRequest];
+  findById = [BaseValidator.mongoId()];
 
-  findAll = [];
+  findAll = BaseValidator.pagination();
 
-  softDelete = [BaseValidator.mongoId(), validateRequest];
+  softDelete = [BaseValidator.mongoId()];
 
-  restore = [BaseValidator.mongoId(), validateRequest];
+  restore = [BaseValidator.mongoId()];
 }
 
 module.exports = new RoleValidator();

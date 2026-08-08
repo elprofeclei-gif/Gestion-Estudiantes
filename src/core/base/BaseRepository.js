@@ -10,28 +10,21 @@ class BaseRepository {
     this.model = model;
   }
 
-  async create(data) {
-    return this.model.create(data);
+  async create(data, user = null) {
+    const payload = { ...data };
+
+    if (user) {
+      payload.createdBy = user;
+      payload.updatedBy = user;
+    }
+
+    return this.model.create(payload);
   }
 
   async findById(id, options = {}) {
-    const { populate = [], select = '' } = options;
+    const { populate = [], select = '', includeDeleted = false } = options;
 
-    let query = this.model.findById(id);
-
-    if (select) {
-      query = query.select(select);
-    }
-
-    populate.forEach((item) => {
-      query = query.populate(item);
-    });
-
-    return query;
-  }
-
-  async findOne(filter = {}, options = {}) {
-    const { populate = [], select = '' } = options;
+    const filter = includeDeleted ? { _id: id } : { _id: id, estado: true };
 
     let query = this.model.findOne(filter);
 
@@ -46,64 +39,135 @@ class BaseRepository {
     return query;
   }
 
+  async findOne(filter = {}, options = {}) {
+    const { populate = [], select = '', includeDeleted = false } = options;
+
+    const finalFilter = { ...filter };
+
+    if (!includeDeleted) {
+      finalFilter.estado = true;
+    }
+
+    let query = this.model.findOne(finalFilter);
+
+    if (select) {
+      query = query.select(select);
+    }
+
+    populate.forEach((item) => {
+      query = query.populate(item);
+    });
+
+    return query;
+  }
+
   async findAll(filter = {}, options = {}) {
-    const { page = 1, limit = 10 } = options;
+    const {
+      page = Pagination.DEFAULT_PAGE,
+      limit = Pagination.DEFAULT_LIMIT,
+      includeDeleted = false,
+    } = options;
 
     const pagination = Pagination.build(page, limit);
 
-    const query = new QueryBuilder(this.model).build(filter, {
+    const finalFilter = { ...filter };
+
+    if (!includeDeleted) {
+      finalFilter.estado = true;
+    }
+
+    const query = new QueryBuilder(this.model).build(finalFilter, {
       ...options,
       skip: pagination.skip,
       limit: pagination.limit,
     });
 
-    const [items, total] = await Promise.all([query, this.model.countDocuments(filter)]);
+    const [items, total] = await Promise.all([query, this.model.countDocuments(finalFilter)]);
 
     return Pagination.result(items, total, pagination.page, pagination.limit);
   }
 
-  async update(id, data, options = {}) {
-    return this.model.findByIdAndUpdate(id, data, {
-      returnDocument: 'after',
-      runValidators: true,
-      ...options,
-    });
+  async update(id, data, user = null, options = {}) {
+    const payload = { ...data };
+
+    if (user) {
+      payload.updatedBy = user;
+    }
+
+    return this.model.findOneAndUpdate(
+      {
+        _id: id,
+        estado: true,
+      },
+      payload,
+      {
+        new: true,
+        runValidators: true,
+        ...options,
+      }
+    );
   }
 
   async softDelete(id, deletedBy = null) {
-    return this.model.findByIdAndUpdate(
-      id,
+    return this.model.findOneAndUpdate(
+      {
+        _id: id,
+        estado: true,
+      },
       {
         estado: false,
         deletedAt: new Date(),
         deletedBy,
       },
       {
-        returnDocument: 'after',
+        new: true,
+        runValidators: true,
       }
     );
   }
 
-  async restore(id) {
-    return this.model.findByIdAndUpdate(
-      id,
+  async restore(id, restoredBy = null) {
+    const update = {
+      estado: true,
+      deletedAt: null,
+      deletedBy: null,
+    };
+
+    if (restoredBy) {
+      update.updatedBy = restoredBy;
+    }
+
+    return this.model.findOneAndUpdate(
       {
-        estado: true,
-        deletedAt: null,
-        deletedBy: null,
+        _id: id,
+        estado: false,
       },
+      update,
       {
-        returnDocument: 'after',
+        new: true,
+        runValidators: true,
       }
     );
   }
 
-  async exists(filter = {}) {
-    return this.model.exists(filter);
+  async exists(filter = {}, options = {}) {
+    const finalFilter = { ...filter };
+
+    if (!options.includeDeleted) {
+      finalFilter.estado = true;
+    }
+
+    return this.model.exists(finalFilter);
   }
 
-  async count(filter = {}) {
-    return this.model.countDocuments(filter);
+  async count(filter = {}, options = {}) {
+    const finalFilter = { ...filter };
+
+    if (!options.includeDeleted) {
+      finalFilter.estado = true;
+    }
+
+    return this.model.countDocuments(finalFilter);
   }
 }
 

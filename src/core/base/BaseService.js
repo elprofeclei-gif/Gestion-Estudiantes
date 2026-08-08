@@ -11,10 +11,10 @@ class BaseService {
     this.unique = options.unique || [];
   }
 
-  async create(data) {
+  async create(data, user = null) {
     await this.validateUnique(data);
 
-    return this.repository.create(data);
+    return this.repository.create(data, user);
   }
 
   async findById(id, options = {}) {
@@ -35,38 +35,48 @@ class BaseService {
     return this.repository.findAll(filter, options);
   }
 
-  async update(id, data, options = {}) {
+  async update(id, data, user = null, options = {}) {
     await this.findById(id);
 
     await this.validateUnique(data, id);
 
-    return this.repository.update(id, data, options);
+    const item = await this.repository.update(id, data, user, options);
+
+    if (!item) {
+      throw new NotFoundError('Registro no encontrado.');
+    }
+
+    return item;
   }
 
   async softDelete(id, user = null) {
     await this.findById(id);
 
-    return this.repository.softDelete(id, user);
+    const item = await this.repository.softDelete(id, user);
+
+    if (!item) {
+      throw new NotFoundError('Registro no encontrado.');
+    }
+
+    return item;
   }
 
-  async delete(id) {
-    await this.findById(id);
+  async restore(id, user = null) {
+    const item = await this.repository.restore(id, user);
 
-    return this.repository.delete(id);
+    if (!item) {
+      throw new NotFoundError('El registro no existe o no se encuentra eliminado.');
+    }
+
+    return item;
   }
 
-  async restore(id) {
-    await this.findById(id);
-
-    return this.repository.restore(id);
+  async exists(filter = {}, options = {}) {
+    return this.repository.exists(filter, options);
   }
 
-  async exists(filter = {}) {
-    return this.repository.exists(filter);
-  }
-
-  async count(filter = {}) {
-    return this.repository.count(filter);
+  async count(filter = {}, options = {}) {
+    return this.repository.count(filter, options);
   }
 
   async validateUnique(data, id = null) {
@@ -79,11 +89,16 @@ class BaseService {
         continue;
       }
 
-      const exists = await this.repository.findOne({
-        [field]: data[field],
-      });
+      const exists = await this.repository.findOne(
+        {
+          [field]: data[field],
+        },
+        {
+          includeDeleted: true,
+        }
+      );
 
-      if (exists && (!id || exists._id.toString() !== id)) {
+      if (exists && (!id || exists._id.toString() !== id.toString())) {
         throw new ConflictError(`El ${field} ya existe.`);
       }
     }

@@ -1,27 +1,21 @@
 const BaseValidator = require('../../../core/base/BaseValidator');
-const validateRequest = require('../../../core/middlewares/validateRequest');
 
 class PermissionValidator {
-  create = [
-    BaseValidator.requiredString('nombre'),
-    BaseValidator.optionalString('descripcion'),
-    validateRequest,
-  ];
+  create = [BaseValidator.requiredString('nombre'), BaseValidator.optionalString('descripcion')];
 
   update = [
     BaseValidator.mongoId(),
     BaseValidator.requiredString('nombre'),
     BaseValidator.optionalString('descripcion'),
-    validateRequest,
   ];
 
-  findById = [BaseValidator.mongoId(), validateRequest];
+  findById = [BaseValidator.mongoId()];
 
-  softDelete = [BaseValidator.mongoId(), validateRequest];
+  findAll = BaseValidator.pagination();
 
-  restore = [BaseValidator.mongoId(), validateRequest];
+  softDelete = [BaseValidator.mongoId()];
 
-  findAll = [];
+  restore = [BaseValidator.mongoId()];
 }
 
 module.exports = new PermissionValidator();

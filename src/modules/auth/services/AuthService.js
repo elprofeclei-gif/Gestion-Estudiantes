@@ -1,9 +1,8 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-
-const env = require('../../../config/env');
-
 const UnauthorizedError = require('../../../core/errors/UnauthorizedError');
+
+const jwt = require('../../../config/jwt');
+const passwordHelper = require('../../../core/helpers/password.helper');
+
 const userRepository = require('../../users/repositories/UserRepository');
 
 class AuthService {
@@ -14,22 +13,16 @@ class AuthService {
       throw new UnauthorizedError('Credenciales inválidas.');
     }
 
-    const valid = await bcrypt.compare(password, user.password);
+    const validPassword = await passwordHelper.compare(password, user.password);
 
-    if (!valid) {
+    if (!validPassword) {
       throw new UnauthorizedError('Credenciales inválidas.');
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        rol: user.rol._id,
-      },
-      env.jwt.secret,
-      {
-        expiresIn: env.jwt.expiresIn,
-      }
-    );
+    const token = jwt.sign({
+      id: user._id.toString(),
+      rol: user.rol?._id?.toString(),
+    });
 
     user.password = undefined;
 

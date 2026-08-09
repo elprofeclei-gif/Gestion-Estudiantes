@@ -11,7 +11,7 @@ class PermissionValidator {
 
   findById = [BaseValidator.mongoId()];
 
-  findAll = BaseValidator.pagination();
+  findAll = BaseValidator.pagination(['nombre', 'createdAt', 'updatedAt']);
 
   softDelete = [BaseValidator.mongoId()];
 

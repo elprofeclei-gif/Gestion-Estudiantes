@@ -1,34 +1,42 @@
-const UnauthorizedError = require('../../../core/errors/UnauthorizedError');
-
 const jwt = require('../../../config/jwt');
 const passwordHelper = require('../../../core/helpers/password.helper');
+const UnauthorizedError = require('../../../core/errors/UnauthorizedError');
 
 const userRepository = require('../../users/repositories/UserRepository');
 
 class AuthService {
   async login(correo, password) {
-    const user = await userRepository.findByEmail(correo);
+    const usuario = await userRepository.findByEmail(correo);
 
-    if (!user) {
+    if (!usuario) {
       throw new UnauthorizedError('Credenciales inválidas.');
     }
 
-    const validPassword = await passwordHelper.compare(password, user.password);
+    if (!usuario.estado) {
+      throw new UnauthorizedError('El usuario está inactivo.');
+    }
 
-    if (!validPassword) {
+    const passwordValido = await passwordHelper.compare(password, usuario.password);
+
+    if (!passwordValido) {
       throw new UnauthorizedError('Credenciales inválidas.');
     }
+
+    usuario.ultimoAcceso = new Date();
+    await usuario.save();
 
     const token = jwt.sign({
-      id: user._id.toString(),
-      rol: user.rol?._id?.toString(),
+      id: usuario._id,
+      rol: usuario.rol?._id,
     });
 
-    user.password = undefined;
+    const usuarioRespuesta = usuario.toObject();
+
+    delete usuarioRespuesta.password;
 
     return {
       token,
-      user,
+      user: usuarioRespuesta,
     };
   }
 }

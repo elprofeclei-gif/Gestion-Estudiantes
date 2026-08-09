@@ -23,7 +23,7 @@ class UserValidator {
 
   findById = [BaseValidator.mongoId()];
 
-  findAll = BaseValidator.pagination();
+  findAll = BaseValidator.pagination(['nombres', 'apellidos', 'correo', 'createdAt', 'updatedAt']);
 
   softDelete = [BaseValidator.mongoId()];
 

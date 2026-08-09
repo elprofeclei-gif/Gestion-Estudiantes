@@ -1,4 +1,4 @@
-const User = require('../../modules/users/models/User');
+const userRepository = require('../../modules/users/repositories/UserRepository');
 
 const verificarPermiso = (permisoRequerido) => {
   return async (req, res, next) => {
@@ -15,17 +15,29 @@ const verificarPermiso = (permisoRequerido) => {
         return next();
       }
 
-      const usuario = await User.findById(req.user.id).populate({
-        path: 'rol',
-        populate: {
-          path: 'permisos',
-        },
+      const usuario = await userRepository.findById(req.user.id, {
+        populate: [
+          {
+            path: 'rol',
+            populate: {
+              path: 'permisos',
+            },
+          },
+        ],
       });
 
       if (!usuario) {
         return res.status(401).json({
           ok: false,
-          message: 'Usuario no encontrado.',
+          message: 'Usuario no encontrado o inactivo.',
+          errors: null,
+        });
+      }
+
+      if (!usuario.estado) {
+        return res.status(403).json({
+          ok: false,
+          message: 'El usuario está inactivo.',
           errors: null,
         });
       }
@@ -38,7 +50,17 @@ const verificarPermiso = (permisoRequerido) => {
         });
       }
 
-      const tienePermiso = usuario.rol.permisos.some(
+      if (!usuario.rol.estado) {
+        return res.status(403).json({
+          ok: false,
+          message: 'El rol del usuario está inactivo.',
+          errors: null,
+        });
+      }
+
+      const permisos = usuario.rol.permisos || [];
+
+      const tienePermiso = permisos.some(
         (permiso) => permiso.estado === true && permiso.nombre === permisoRequerido
       );
 

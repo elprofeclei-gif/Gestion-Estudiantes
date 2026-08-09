@@ -5,10 +5,8 @@ const BaseValidator = require('../../../core/base/BaseValidator');
 class RoleValidator {
   create = [
     BaseValidator.requiredString('nombre'),
-    BaseValidator.optionalString('descripcion'),
-
+    BaseValidator.requiredString('descripcion'),
     body('permisos').optional().isArray().withMessage('Los permisos deben ser un arreglo.'),
-
     body('permisos.*')
       .optional()
       .isMongoId()
@@ -18,10 +16,8 @@ class RoleValidator {
   update = [
     BaseValidator.mongoId(),
     BaseValidator.requiredString('nombre'),
-    BaseValidator.optionalString('descripcion'),
-
+    BaseValidator.requiredString('descripcion'),
     body('permisos').optional().isArray().withMessage('Los permisos deben ser un arreglo.'),
-
     body('permisos.*')
       .optional()
       .isMongoId()
@@ -30,7 +26,7 @@ class RoleValidator {
 
   findById = [BaseValidator.mongoId()];
 
-  findAll = BaseValidator.pagination();
+  findAll = BaseValidator.pagination(['nombre', 'createdAt', 'updatedAt']);
 
   softDelete = [BaseValidator.mongoId()];
 
